@@ -1,0 +1,49 @@
+:root {
+  --background: #121212;
+  --foreground: #ededed;
+  --primary: #bb86fc;
+  --secondary: #03dac6;
+  --surface: #1e1e1e;
+  --error: #cf6679;
+  --on-primary: #000000;
+  --on-secondary: #000000;
+  --on-surface: #ededed;
+  --ring: #3b82f6;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
