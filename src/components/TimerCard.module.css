@@ -6,6 +6,12 @@
     width: 140px;
     height: 140px;
     display: flex;
+
+    @media (max-width: 400px) {
+        width: 100px;
+        height: 100px;
+    }
+
     flex-direction: column;
     justify-content: center;
     align-items: center;

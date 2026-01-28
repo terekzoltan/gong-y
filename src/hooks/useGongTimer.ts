@@ -73,6 +73,42 @@ export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerP
         audioRef.current = new Audio(selectedSound);
     }, [selectedSound]);
 
+    // Wake Lock API
+    const wakeLockRef = useRef<any>(null);
+
+    useEffect(() => {
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.error(`${err} - Wake Lock request failed`);
+            }
+        };
+
+        const releaseWakeLock = async () => {
+            if (wakeLockRef.current) {
+                try {
+                    await wakeLockRef.current.release();
+                    wakeLockRef.current = null;
+                } catch (err) {
+                    console.error(`${err} - Wake Lock release failed`);
+                }
+            }
+        };
+
+        if (isRunning) {
+            requestWakeLock();
+        } else {
+            releaseWakeLock();
+        }
+
+        return () => {
+            releaseWakeLock();
+        };
+    }, [isRunning]);
+
     // Monitor for 10s remaining
     useEffect(() => {
         if (isRunning && totalSeconds === 10 && !gongPlayed10s) {
