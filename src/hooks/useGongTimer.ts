@@ -106,9 +106,11 @@ export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerP
         pause();
     };
 
+    const totalDisplayMinutes = hours * 60 + minutes;
+
     return {
         totalSeconds,
-        displayTime: `${minutes}:${seconds.toString().padStart(2, "0")}`,
+        displayTime: `${totalDisplayMinutes}:${seconds.toString().padStart(2, "0")}`,
         isRunning,
         startTimer,
         stopTimer,

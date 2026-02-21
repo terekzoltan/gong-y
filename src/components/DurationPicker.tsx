@@ -44,7 +44,7 @@ export default function DurationPicker({ onStart }: DurationPickerProps) {
             </div>
 
             {totalMinutes !== null && totalMinutes > 0 && (
-                <div style={{ marginTop: '4rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', letterSpacing: '1px' }}>
+                <div style={{ marginTop: '2rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', letterSpacing: '1px', textAlign: 'center' }}>
                     Mindful minutes: {totalMinutes}
                 </div>
             )}
