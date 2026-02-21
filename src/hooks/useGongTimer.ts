@@ -1,5 +1,6 @@
 import { useTimer } from "react-timer-hook";
 import { useEffect, useRef, useState } from "react";
+import { useWakeLock } from "./useWakeLock";
 
 interface UseGongTimerProps {
     initialDurationMinutes: number;
@@ -62,7 +63,11 @@ export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerP
     } = useTimer({
         expiryTimestamp: getExpiryTimestamp(initialDurationMinutes),
         onExpire: () => {
-            // playGong(); // User requested only start and 10s before end
+            // Save mindful minutes tracking to localStorage
+            const stored = localStorage.getItem("gongy_total_minutes");
+            const currentTotal = stored ? parseInt(stored, 10) : 0;
+            localStorage.setItem("gongy_total_minutes", (currentTotal + initialDurationMinutes).toString());
+
             if (onFinish) onFinish();
         },
         autoStart: false,
@@ -74,40 +79,7 @@ export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerP
     }, [selectedSound]);
 
     // Wake Lock API
-    const wakeLockRef = useRef<any>(null);
-
-    useEffect(() => {
-        const requestWakeLock = async () => {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-                }
-            } catch (err) {
-                console.error(`${err} - Wake Lock request failed`);
-            }
-        };
-
-        const releaseWakeLock = async () => {
-            if (wakeLockRef.current) {
-                try {
-                    await wakeLockRef.current.release();
-                    wakeLockRef.current = null;
-                } catch (err) {
-                    console.error(`${err} - Wake Lock release failed`);
-                }
-            }
-        };
-
-        if (isRunning) {
-            requestWakeLock();
-        } else {
-            releaseWakeLock();
-        }
-
-        return () => {
-            releaseWakeLock();
-        };
-    }, [isRunning]);
+    useWakeLock(isRunning);
 
     // Monitor for 10s remaining
     useEffect(() => {

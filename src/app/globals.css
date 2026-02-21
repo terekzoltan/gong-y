@@ -1,14 +1,21 @@
 :root {
-  --background: #121212;
-  --foreground: #ededed;
+  --background-start: #0a0a1a;
+  --background-end: #1a1a3a;
+  --background: var(--background-start);
+  --foreground: #ffffff;
   --primary: #bb86fc;
+  --primary-glow: rgba(187, 134, 252, 0.4);
   --secondary: #03dac6;
-  --surface: #1e1e1e;
+  --surface: rgba(30, 30, 30, 0.4);
   --error: #cf6679;
   --on-primary: #000000;
   --on-secondary: #000000;
   --on-surface: #ededed;
   --ring: #3b82f6;
+
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -25,7 +32,9 @@ body {
 }
 
 body {
-  background-color: var(--background);
+  background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+  background-size: 200% 200%;
+  animation: breathingBackground 15s ease-in-out infinite;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   display: flex;
@@ -34,6 +43,28 @@ body {
   justify-content: center;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes breathingBackground {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 a {

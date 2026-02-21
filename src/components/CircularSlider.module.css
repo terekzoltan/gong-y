@@ -1,0 +1,49 @@
+.container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.svg {
+    cursor: grab;
+    touch-action: none;
+    overflow: visible;
+}
+
+.svg:active {
+    cursor: grabbing;
+}
+
+.thumb {
+    transition: transform 0.1s ease;
+    cursor: grab;
+}
+
+.svg:hover .thumb {
+    transform: scale(1.2);
+}
+
+.valueDisplay {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.value {
+    font-size: 4rem;
+    font-weight: 200;
+    color: var(--foreground);
+    text-shadow: 0 0 20px rgba(187, 134, 252, 0.3);
+}
+
+.unit {
+    font-size: 1rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: -5px;
+}
