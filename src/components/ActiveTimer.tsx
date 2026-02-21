@@ -8,7 +8,7 @@ interface ActiveTimerProps {
 }
 
 export default function ActiveTimer({ minutes, onCancel }: ActiveTimerProps) {
-    const { displayTime, isRunning, startTimer, stopTimer, setTimeSeconds, totalSeconds, initialDurationSeconds } = useGongTimer({
+    const { displayTime, isRunning, startTimer, stopTimer, pause, resume, setTimeSeconds, totalSeconds, initialDurationSeconds } = useGongTimer({
         initialDurationMinutes: minutes,
         onFinish: () => {
             // Keep visible when finished
@@ -44,9 +44,17 @@ export default function ActiveTimer({ minutes, onCancel }: ActiveTimerProps) {
                 />
             </div>
 
-            <button className={styles.cancelButton} onClick={onCancel}>
-                Stop
-            </button>
+            <div className={styles.buttonGroup}>
+                <button
+                    className={styles.pauseButton}
+                    onClick={isRunning ? pause : resume}
+                >
+                    {isRunning ? "Pause" : "Resume"}
+                </button>
+                <button className={styles.cancelButton} onClick={onCancel}>
+                    Stop
+                </button>
+            </div>
         </div>
     );
 }

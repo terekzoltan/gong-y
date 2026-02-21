@@ -15,6 +15,29 @@
     text-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
 }
 
+.buttonGroup {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.pauseButton {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+}
+
+.pauseButton:hover {
+    background: var(--primary);
+    color: #121212;
+}
+
 .cancelButton {
     background: transparent;
     color: var(--error);
