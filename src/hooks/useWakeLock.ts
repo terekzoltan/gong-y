@@ -25,14 +25,22 @@ export function useWakeLock(isActive: boolean) {
             }
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && (!wakeLockRef.current || wakeLockRef.current.released)) {
+                requestWakeLock();
+            }
+        };
+
         if (isActive) {
             requestWakeLock();
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
+            return () => {
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+                releaseWakeLock();
+            };
         } else {
             releaseWakeLock();
         }
-
-        return () => {
-            releaseWakeLock();
-        };
     }, [isActive]);
 }
