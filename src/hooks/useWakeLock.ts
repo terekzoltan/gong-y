@@ -2,15 +2,38 @@ import { useEffect, useRef } from "react";
 
 export function useWakeLock(isActive: boolean) {
     const wakeLockRef = useRef<any>(null);
+    const isRequestingRef = useRef(false);
+    const isActiveRef = useRef(isActive);
 
     useEffect(() => {
+        isActiveRef.current = isActive;
+    }, [isActive]);
+
+    useEffect(() => {
+        let isMounted = true;
+
         const requestWakeLock = async () => {
             try {
-                if ('wakeLock' in navigator) {
-                    wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+                if (
+                    isActiveRef.current &&
+                    document.visibilityState === "visible" &&
+                    !wakeLockRef.current &&
+                    !isRequestingRef.current &&
+                    "wakeLock" in navigator
+                ) {
+                    isRequestingRef.current = true;
+                    wakeLockRef.current = await (navigator as any).wakeLock.request("screen");
+                    wakeLockRef.current.onrelease = () => {
+                        wakeLockRef.current = null;
+                        if (isMounted && isActiveRef.current && document.visibilityState === "visible") {
+                            requestWakeLock();
+                        }
+                    };
                 }
             } catch (err) {
                 console.error(`${err} - Wake Lock request failed`);
+            } finally {
+                isRequestingRef.current = false;
             }
         };
 
@@ -25,6 +48,16 @@ export function useWakeLock(isActive: boolean) {
             }
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                requestWakeLock();
+            } else {
+                releaseWakeLock();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
         if (isActive) {
             requestWakeLock();
         } else {
@@ -32,6 +65,8 @@ export function useWakeLock(isActive: boolean) {
         }
 
         return () => {
+            isMounted = false;
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
             releaseWakeLock();
         };
     }, [isActive]);
