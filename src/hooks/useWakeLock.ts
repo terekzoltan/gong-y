@@ -2,6 +2,12 @@ import { useEffect, useRef } from "react";
 
 export function useWakeLock(isActive: boolean) {
     const wakeLockRef = useRef<any>(null);
+    const isRequestingRef = useRef(false);
+    const isActiveRef = useRef(isActive);
+
+    useEffect(() => {
+        isActiveRef.current = isActive;
+    }, [isActive]);
 
     useEffect(() => {
         let isMounted = true;
@@ -9,21 +15,25 @@ export function useWakeLock(isActive: boolean) {
         const requestWakeLock = async () => {
             try {
                 if (
-                    isActive &&
+                    isActiveRef.current &&
                     document.visibilityState === "visible" &&
                     !wakeLockRef.current &&
+                    !isRequestingRef.current &&
                     "wakeLock" in navigator
                 ) {
+                    isRequestingRef.current = true;
                     wakeLockRef.current = await (navigator as any).wakeLock.request("screen");
-                    wakeLockRef.current.addEventListener("release", () => {
+                    wakeLockRef.current.onrelease = () => {
                         wakeLockRef.current = null;
-                        if (isMounted && isActive && document.visibilityState === "visible") {
+                        if (isMounted && isActiveRef.current && document.visibilityState === "visible") {
                             requestWakeLock();
                         }
-                    });
+                    };
                 }
             } catch (err) {
                 console.error(`${err} - Wake Lock request failed`);
+            } finally {
+                isRequestingRef.current = false;
             }
         };
 
