@@ -78,8 +78,8 @@ export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerP
         audioRef.current = new Audio(selectedSound);
     }, [selectedSound]);
 
-    // Wake Lock API
-    useWakeLock(isRunning);
+    // Wake Lock API - ALWAYS ACTIVE
+    useWakeLock(true);
 
     // Monitor for 10s remaining
     useEffect(() => {
