@@ -4,10 +4,23 @@ export function useWakeLock(isActive: boolean) {
     const wakeLockRef = useRef<any>(null);
 
     useEffect(() => {
+        let isMounted = true;
+
         const requestWakeLock = async () => {
             try {
-                if ('wakeLock' in navigator) {
-                    wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+                if (
+                    isActive &&
+                    document.visibilityState === "visible" &&
+                    !wakeLockRef.current &&
+                    "wakeLock" in navigator
+                ) {
+                    wakeLockRef.current = await (navigator as any).wakeLock.request("screen");
+                    wakeLockRef.current.addEventListener("release", () => {
+                        wakeLockRef.current = null;
+                        if (isMounted && isActive && document.visibilityState === "visible") {
+                            requestWakeLock();
+                        }
+                    });
                 }
             } catch (err) {
                 console.error(`${err} - Wake Lock request failed`);
@@ -25,6 +38,16 @@ export function useWakeLock(isActive: boolean) {
             }
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                requestWakeLock();
+            } else {
+                releaseWakeLock();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
         if (isActive) {
             requestWakeLock();
         } else {
@@ -32,6 +55,8 @@ export function useWakeLock(isActive: boolean) {
         }
 
         return () => {
+            isMounted = false;
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
             releaseWakeLock();
         };
     }, [isActive]);
