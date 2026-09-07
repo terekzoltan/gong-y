@@ -15,6 +15,7 @@ const GONG_SOUNDS = [
 
 export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerProps) {
     const [gongPlayed10s, setGongPlayed10s] = useState(false);
+    const [gongPlayedTwoThirds, setGongPlayedTwoThirds] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Random sound selection - happens once per timer instance
@@ -89,11 +90,21 @@ export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerP
         }
     }, [totalSeconds, isRunning, gongPlayed10s]);
 
+    // Monitor for 2/3 elapsed (1/3 remaining)
+    useEffect(() => {
+        const oneThirdRemainingSeconds = Math.floor((initialDurationMinutes * 60) / 3);
+        if (isRunning && totalSeconds === oneThirdRemainingSeconds && !gongPlayedTwoThirds) {
+            playGong();
+            setGongPlayedTwoThirds(true);
+        }
+    }, [totalSeconds, isRunning, gongPlayedTwoThirds, initialDurationMinutes]);
+
     const startTimer = () => {
         const time = getExpiryTimestamp(initialDurationMinutes);
         restart(time);
         playGong();
         setGongPlayed10s(false);
+        setGongPlayedTwoThirds(false);
     };
 
     // Set time in SECONDS for video-scrubber style slider
