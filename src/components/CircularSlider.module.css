@@ -1,49 +1,66 @@
 .container {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 2rem 0;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: min(100%, 17rem);
+  aspect-ratio: 1;
+  margin: clamp(1.25rem, 4vw, 2rem) 0;
 }
 
 .svg {
-    cursor: grab;
-    touch-action: none;
-    overflow: visible;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+  touch-action: none;
+  overflow: visible;
+  outline: none;
 }
 
 .svg:active {
-    cursor: grabbing;
+  cursor: grabbing;
+}
+
+.svg:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 8px;
+  border-radius: 50%;
 }
 
 .thumb {
-    transition: transform 0.1s ease;
-    cursor: grab;
+  transition: transform 0.1s ease;
+  cursor: grab;
 }
 
 .svg:hover .thumb {
-    transform: scale(1.2);
+  filter: drop-shadow(0 0 6px rgba(187, 134, 252, 0.7));
 }
 
 .valueDisplay {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
 .value {
-    font-size: 4rem;
-    font-weight: 200;
-    color: var(--foreground);
-    text-shadow: 0 0 20px rgba(187, 134, 252, 0.3);
+  font-size: clamp(3rem, 12vw, 4rem);
+  font-weight: 200;
+  color: var(--foreground);
+  text-shadow: 0 0 20px rgba(187, 134, 252, 0.3);
 }
 
 .unit {
-    font-size: 1rem;
-    letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.5);
-    margin-top: -5px;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: -5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb {
+    transition: none;
+  }
 }

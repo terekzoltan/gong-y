@@ -1,153 +1,163 @@
 .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    animation: fadeIn 0.5s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 70dvh;
+  padding: 2rem 1rem;
+  border-radius: 50%;
+  animation: fadeIn 0.5s ease-out;
 }
-
+.eyebrow {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  text-align: center;
+  margin-bottom: 1rem;
+}
 .timerDisplay {
-    font-size: 8rem;
-    font-weight: 200;
-    font-variant-numeric: tabular-nums;
-    margin-bottom: 2rem;
-    text-shadow: 0 0 20px rgba(187, 134, 252, 0.4);
-    transition: all 1s ease;
+  font-size: clamp(4.5rem, 19vw, 8rem);
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2rem;
+  letter-spacing: -0.055em;
+  text-shadow: 0 0 30px rgba(187, 134, 252, 0.22);
+  transition:
+    opacity 1s ease,
+    transform 1s ease;
 }
-
 .zenModeText {
-    opacity: 0.5;
-    text-shadow: 0 0 40px rgba(187, 134, 252, 0.6);
-    transform: scale(1.05);
+  opacity: 0.55;
+  transform: scale(1.04);
 }
-
-.warmUpText {
-    font-size: 2rem;
-    font-weight: 300;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 1rem;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    animation: pulse 1.5s infinite alternate;
-}
-
-@keyframes pulse {
-    from {
-        opacity: 0.5;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
 .controlsWrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    transition: opacity 1.5s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  transition: opacity 1.5s ease;
 }
-
 .visible {
-    opacity: 1;
-    pointer-events: auto;
+  opacity: 1;
 }
-
 .hidden {
-    opacity: 0;
-    pointer-events: none;
+  opacity: 0;
+  pointer-events: none;
 }
-
+.hidden:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
 .buttonGroup {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
-
-.pauseButton {
-    background: transparent;
-    color: var(--primary);
-    border: 1px solid var(--primary);
-    padding: 12px 32px;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    transition: all 0.3s ease;
-}
-
-.pauseButton:hover {
-    background: var(--primary);
-    color: #121212;
-}
-
+.pauseButton,
 .cancelButton {
-    background: transparent;
-    color: var(--error);
-    border: 1px solid var(--error);
-    padding: 12px 32px;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    transition: all 0.3s ease;
+  border: 1px solid var(--glass-border);
+  padding: 0.85rem 1.75rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
-
+.pauseButton {
+  color: var(--primary);
+  background: rgba(187, 134, 252, 0.07);
+  border-color: rgba(187, 134, 252, 0.35);
+}
+.pauseButton:hover {
+  background: rgba(187, 134, 252, 0.16);
+  border-color: var(--primary);
+}
+.cancelButton {
+  color: rgba(255, 255, 255, 0.65);
+}
 .cancelButton:hover {
-    background: var(--error);
-    color: white;
+  color: var(--foreground);
+  background: var(--glass-bg-hover);
 }
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
 .controls {
-    width: 100%;
-    max-width: 300px;
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: center;
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
 }
-
 .slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-    outline: none;
-    opacity: 0.7;
-    transition: opacity .2s;
-    cursor: pointer;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.17);
+  border-radius: 5px;
+  cursor: pointer;
 }
-
-.slider:hover {
-    opacity: 1;
-}
-
 .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(187, 134, 252, 0.5);
-    transition: transform 0.1s;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 15px rgba(187, 134, 252, 0.35);
 }
-
-.slider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
+.slider::-moz-range-thumb {
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.cueMarker {
+  position: absolute;
+  left: calc(11px + (100% - 22px) / 3);
+  width: 2px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: -0;
+}
+.caption {
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.58);
+  text-align: center;
+  margin-bottom: 1.75rem;
+  max-width: 290px;
+}
+.audioNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    animation: none;
+  }
+  .timerDisplay,
+  .controlsWrapper {
+    transition: none;
+  }
 }

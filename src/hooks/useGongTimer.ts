@@ -1,133 +1,100 @@
 import { useTimer } from "react-timer-hook";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWakeLock } from "./useWakeLock";
+import { getDueCues } from "../lib/timerCues.mjs";
+import { addMindfulMinutes } from "../lib/mindfulMinutes";
 
-interface UseGongTimerProps {
-    initialDurationMinutes: number;
-    onFinish?: () => void;
-}
-
-const GONG_SOUNDS = [
-    "/sounds/bong-105459.mp3",
-    "/sounds/gong-79191.mp3",
-    "/sounds/instrument_gong_soft-107870.mp3",
-];
-
-export function useGongTimer({ initialDurationMinutes, onFinish }: UseGongTimerProps) {
-    const [gongPlayed10s, setGongPlayed10s] = useState(false);
-    const [gongPlayedTwoThirds, setGongPlayedTwoThirds] = useState(false);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    // Random sound selection - happens once per timer instance
-    const [selectedSound] = useState(() => {
-        const randomIndex = Math.floor(Math.random() * GONG_SOUNDS.length);
-        return GONG_SOUNDS[randomIndex];
-    });
-
-    const getExpiryTimestamp = (minutes: number) => {
-        const time = new Date();
-        time.setSeconds(time.getSeconds() + minutes * 60);
-        return time;
-    };
-
-    const getExpiryTimestampFromSeconds = (seconds: number) => {
-        const time = new Date();
-        time.setSeconds(time.getSeconds() + seconds);
-        return time;
-    };
-
-    // Track last play time to prevent double-plays in React Strict Mode or rapid updates
-    const lastPlayTimeRef = useRef<number>(0);
-
-    const playGong = () => {
-        const now = Date.now();
-        // Prevent playing if played less than 1000ms ago
-        if (now - lastPlayTimeRef.current < 1000) return;
-
-        if (audioRef.current) {
-            audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(e => console.error("Audio play failed:", e));
-            lastPlayTimeRef.current = now;
-        }
-    };
-
-    const {
-        totalSeconds,
-        seconds,
-        minutes,
-        hours,
-        isRunning,
-        start,
-        pause,
-        resume,
-        restart,
-    } = useTimer({
-        expiryTimestamp: getExpiryTimestamp(initialDurationMinutes),
-        onExpire: () => {
-            // Save mindful minutes tracking to localStorage
-            const stored = localStorage.getItem("gongy_total_minutes");
-            const currentTotal = stored ? parseInt(stored, 10) : 0;
-            localStorage.setItem("gongy_total_minutes", (currentTotal + initialDurationMinutes).toString());
-
-            if (onFinish) onFinish();
-        },
-        autoStart: false,
-    });
-
-    // Init audio with selected random sound
-    useEffect(() => {
-        audioRef.current = new Audio(selectedSound);
-    }, [selectedSound]);
-
-    // Wake Lock API - ALWAYS ACTIVE
-    useWakeLock(true);
-
-    // Monitor for 10s remaining
-    useEffect(() => {
-        if (isRunning && totalSeconds === 10 && !gongPlayed10s) {
-            playGong();
-            setGongPlayed10s(true);
-        }
-    }, [totalSeconds, isRunning, gongPlayed10s]);
-
-    // Monitor for 2/3 elapsed (1/3 remaining)
-    useEffect(() => {
-        const oneThirdRemainingSeconds = Math.floor((initialDurationMinutes * 60) / 3);
-        if (isRunning && totalSeconds === oneThirdRemainingSeconds && !gongPlayedTwoThirds) {
-            playGong();
-            setGongPlayedTwoThirds(true);
-        }
-    }, [totalSeconds, isRunning, gongPlayedTwoThirds, initialDurationMinutes]);
-
-    const startTimer = () => {
-        const time = getExpiryTimestamp(initialDurationMinutes);
-        restart(time);
-        playGong();
-        setGongPlayed10s(false);
-        setGongPlayedTwoThirds(false);
-    };
-
-    // Set time in SECONDS for video-scrubber style slider
-    const setTimeSeconds = (newSeconds: number) => {
-        const time = getExpiryTimestampFromSeconds(newSeconds);
-        restart(time, isRunning); // Keep running state
-    };
-
-    const stopTimer = () => {
-        pause();
-    };
-
-    const totalDisplayMinutes = hours * 60 + minutes;
-
-    return {
-        totalSeconds,
-        displayTime: `${totalDisplayMinutes}:${seconds.toString().padStart(2, "0")}`,
-        isRunning,
-        startTimer,
-        stopTimer,
-        pause,
-        resume,
-        setTimeSeconds,
-        initialDurationSeconds: initialDurationMinutes * 60,
-    };
+type Phase = "warmup" | "running" | "paused" | "finished";
+export function useGongTimer({
+  initialDurationMinutes,
+  playGong,
+}: {
+  initialDurationMinutes: number;
+  playGong: () => void;
+}) {
+  const initialDurationSeconds = initialDurationMinutes * 60;
+  const [initialExpiry] = useState(
+    () => new Date(Date.now() + initialDurationSeconds * 1000),
+  );
+  const [phase, setPhase] = useState<Phase>("warmup");
+  const [warmUpSeconds, setWarmUpSeconds] = useState(5);
+  const startedRef = useRef(false);
+  const finishedRef = useRef(false);
+  const playedRef = useRef(new Set<string>());
+  const finish = useCallback(() => {
+    if (finishedRef.current || !startedRef.current) return;
+    finishedRef.current = true;
+    setPhase("finished");
+    addMindfulMinutes(initialDurationMinutes);
+  }, [initialDurationMinutes]);
+  const {
+    totalSeconds,
+    restart,
+    pause: pauseClock,
+    resume: resumeClock,
+  } = useTimer({
+    expiryTimestamp: initialExpiry,
+    autoStart: false,
+    onExpire: finish,
+  });
+  useWakeLock(true);
+  useEffect(() => {
+    if (phase !== "warmup") return;
+    const timeout = setTimeout(() => {
+      if (warmUpSeconds > 1) {
+        setWarmUpSeconds((value) => value - 1);
+        return;
+      }
+      if (startedRef.current) return;
+      startedRef.current = true;
+      restart(new Date(Date.now() + initialDurationSeconds * 1000));
+      setWarmUpSeconds(0);
+      setPhase("running");
+      playGong();
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [phase, warmUpSeconds, restart, initialDurationSeconds, playGong]);
+  useEffect(() => {
+    if (phase !== "running" || totalSeconds <= 0) return;
+    const due = getDueCues(
+      initialDurationSeconds,
+      totalSeconds,
+      playedRef.current,
+    );
+    if (!due.length) return;
+    due.forEach((cue) => playedRef.current.add(cue.id));
+    // Coalesce cues when seeking skips both thresholds; never overlap sounds.
+    playGong();
+  }, [phase, totalSeconds, initialDurationSeconds, playGong]);
+  const pause = () => {
+    if (phase !== "running") return;
+    pauseClock();
+    setPhase("paused");
+  };
+  const resume = () => {
+    if (phase !== "paused") return;
+    resumeClock();
+    setPhase("running");
+  };
+  const setTimeSeconds = (seconds: number) => {
+    if (phase !== "running" && phase !== "paused") return;
+    const remaining = Math.min(initialDurationSeconds, Math.max(0, seconds));
+    if (remaining === 0) {
+      pauseClock();
+      finish();
+      return;
+    }
+    restart(new Date(Date.now() + remaining * 1000), phase === "running");
+  };
+  const remaining = phase === "finished" ? 0 : totalSeconds;
+  return {
+    phase,
+    warmUpSeconds,
+    pause,
+    resume,
+    setTimeSeconds,
+    totalSeconds: remaining,
+    initialDurationSeconds,
+    displayTime: `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, "0")}`,
+  };
 }

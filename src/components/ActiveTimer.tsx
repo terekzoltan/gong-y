@@ -1,136 +1,127 @@
-import { useEffect, useState, useRef } from "react";
 import { useGongTimer } from "@/hooks/useGongTimer";
+import { useInactivity } from "@/hooks/useInactivity";
 import styles from "./ActiveTimer.module.css";
 
 interface ActiveTimerProps {
-    minutes: number;
-    onCancel: () => void;
+  minutes: number;
+  onCancel: () => void;
+  playGong: () => void;
+  audioBlocked: boolean;
 }
-
-export default function ActiveTimer({ minutes, onCancel }: ActiveTimerProps) {
-    const [isWarmingUp, setIsWarmingUp] = useState(true);
-    const [warmUpSeconds, setWarmUpSeconds] = useState(5);
-    const [isActive, setIsActive] = useState(true);
-    const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const { displayTime, isRunning, startTimer, stopTimer, pause, resume, setTimeSeconds, totalSeconds, initialDurationSeconds } = useGongTimer({
-        initialDurationMinutes: minutes,
-        onFinish: () => {
-            // Keep visible when finished
-            setIsActive(true); // Ensure controls are visible when finished
-        }
-    });
-
-    // Handle inactivity for Zen Mode
-    const resetInactivityTimeout = () => {
-        setIsActive(true);
-        if (inactivityTimeoutRef.current) {
-            clearTimeout(inactivityTimeoutRef.current);
-        }
-        // Only hide controls if timer is running and warm-up is over
-        if (isRunning && !isWarmingUp) {
-            inactivityTimeoutRef.current = setTimeout(() => {
-                setIsActive(false);
-            }, 3000);
-        }
-    };
-
-    useEffect(() => {
-        // Global listeners for activity
-        window.addEventListener("mousemove", resetInactivityTimeout);
-        window.addEventListener("touchstart", resetInactivityTimeout);
-        window.addEventListener("click", resetInactivityTimeout);
-        window.addEventListener("keydown", resetInactivityTimeout);
-
-        // Initial setup
-        resetInactivityTimeout();
-
-        return () => {
-            window.removeEventListener("mousemove", resetInactivityTimeout);
-            window.removeEventListener("touchstart", resetInactivityTimeout);
-            window.removeEventListener("click", resetInactivityTimeout);
-            window.removeEventListener("keydown", resetInactivityTimeout);
-            if (inactivityTimeoutRef.current) {
-                clearTimeout(inactivityTimeoutRef.current);
-            }
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isRunning, isWarmingUp]);
-
-    // Handle Warm-up Countdown
-    useEffect(() => {
-        if (warmUpSeconds > 0) {
-            const timer = setTimeout(() => setWarmUpSeconds(s => s - 1), 1000);
-            return () => clearTimeout(timer);
-        } else if (isWarmingUp) {
-            setIsWarmingUp(false);
-            startTimer();
-        }
-    }, [warmUpSeconds, isWarmingUp, startTimer]);
-
-    // Slider: min=0 (start), max=initialDurationSeconds (end)
-    // value = elapsed time (starts at 0, goes to max)
-    const elapsedSeconds = initialDurationSeconds - totalSeconds;
-
-    // Calculate progress percentage for dynamic background
-    const progress = totalSeconds <= 0 ? 1 : elapsedSeconds / initialDurationSeconds;
-
-    if (isWarmingUp) {
-        return (
-            <div className={styles.container}>
-                <div className={styles.warmUpText}>Get ready...</div>
-                <div className={styles.timerDisplay}>
-                    {warmUpSeconds}
-                </div>
-                <button className={styles.cancelButton} onClick={onCancel} style={{ marginTop: '2rem' }}>
-                    Cancel
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className={styles.container}
-            style={{
-                background: `radial-gradient(circle at center, rgba(187, 134, 252, ${0.05 + progress * 0.15}) 0%, transparent 70%)`
-            }}
-        >
-            <div className={`${styles.timerDisplay} ${!isActive ? styles.zenModeText : ''}`}>
-                {displayTime}
-            </div>
-
-            <div className={`${styles.controlsWrapper} ${isActive ? styles.visible : styles.hidden}`}>
-                <div className={styles.controls}>
-                    <input
-                        type="range"
-                        min="0"
-                        max={initialDurationSeconds}
-                        value={elapsedSeconds}
-                        className={styles.slider}
-                        onChange={(e) => {
-                            const newElapsed = Number(e.target.value);
-                            setTimeSeconds(initialDurationSeconds - newElapsed);
-                            resetInactivityTimeout(); // Keep visible when interacting
-                        }}
-                    />
-                </div>
-
-                <div className={styles.buttonGroup}>
-                    <button
-                        className={styles.pauseButton}
-                        onClick={() => {
-                            isRunning ? pause() : resume();
-                            resetInactivityTimeout();
-                        }}
-                    >
-                        {isRunning ? "Pause" : "Resume"}
-                    </button>
-                    <button className={styles.cancelButton} onClick={onCancel}>
-                        Stop
-                    </button>
-                </div>
-            </div>
+export default function ActiveTimer({
+  minutes,
+  onCancel,
+  playGong,
+  audioBlocked,
+}: ActiveTimerProps) {
+  const {
+    phase,
+    warmUpSeconds,
+    displayTime,
+    pause,
+    resume,
+    setTimeSeconds,
+    totalSeconds,
+    initialDurationSeconds,
+  } = useGongTimer({ initialDurationMinutes: minutes, playGong });
+  const { hidden, wake } = useInactivity(phase === "running" && !audioBlocked);
+  const elapsedSeconds = initialDurationSeconds - totalSeconds;
+  const progress = Math.min(
+    1,
+    Math.max(0, elapsedSeconds / initialDurationSeconds),
+  );
+  return (
+    <section
+      className={styles.container}
+      aria-label="Meditation timer"
+      style={{
+        background: `radial-gradient(circle at center, rgba(187, 134, 252, ${0.05 + progress * 0.15}) 0%, transparent 70%)`,
+      }}
+    >
+      <p className={styles.eyebrow} aria-live="polite">
+        {phase === "warmup"
+          ? "Settle in"
+          : phase === "finished"
+            ? "Session complete"
+            : phase === "paused"
+              ? "Take your time"
+              : "A little space to be"}
+      </p>
+      <div
+        className={`${styles.timerDisplay} ${hidden ? styles.zenModeText : ""}`}
+        role="timer"
+        aria-label={phase === "warmup" ? "Starting in" : "Time remaining"}
+      >
+        {phase === "warmup" ? warmUpSeconds : displayTime}
+      </div>
+      {audioBlocked && (
+        <div className={styles.audioNotice} role="status">
+          Sound needs a tap to play.
+          <button className={styles.pauseButton} onClick={playGong}>
+            Enable sound
+          </button>
         </div>
-    );
+      )}
+      <div
+        className={`${styles.controlsWrapper} ${hidden ? styles.hidden : styles.visible}`}
+        onFocusCapture={wake}
+      >
+        {phase !== "warmup" && phase !== "finished" && (
+          <>
+            <div className={styles.controls}>
+              <input
+                type="range"
+                min="0"
+                max={initialDurationSeconds}
+                value={elapsedSeconds}
+                aria-label="Session progress"
+                aria-valuetext={`${displayTime} remaining`}
+                className={styles.slider}
+                onChange={(event) => {
+                  setTimeSeconds(
+                    initialDurationSeconds - Number(event.target.value),
+                  );
+                  wake();
+                }}
+              />
+              <span className={styles.cueMarker} aria-hidden="true" />
+            </div>
+            <p className={styles.caption}>
+              Gong at one third · gentle reminder with 10s left
+            </p>
+          </>
+        )}
+        {phase === "finished" && (
+          <p className={styles.caption}>
+            Carry this quiet into the rest of your day.
+          </p>
+        )}
+        <div className={styles.buttonGroup}>
+          {(phase === "running" || phase === "paused") && (
+            <button
+              className={styles.pauseButton}
+              onClick={() => {
+                phase === "running" ? pause() : resume();
+                wake();
+              }}
+            >
+              {phase === "running" ? "Pause" : "Resume"}
+            </button>
+          )}
+          <button
+            className={
+              phase === "finished" ? styles.pauseButton : styles.cancelButton
+            }
+            onClick={onCancel}
+          >
+            {phase === "warmup"
+              ? "Cancel"
+              : phase === "finished"
+                ? "Back to durations"
+                : "Stop"}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
 }
