@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import type { KeyboardEvent, PointerEvent } from "react";
 import styles from "./CircularSlider.module.css";
 
 interface CircularSliderProps {
@@ -8,85 +8,68 @@ interface CircularSliderProps {
   onChange: (value: number) => void;
 }
 
+const radius = 120;
+const strokeWidth = 10;
+const center = radius + strokeWidth;
+const size = center * 2;
+const fullTurn = 2 * Math.PI;
+const circumference = fullTurn * radius;
+
+function clockwiseFraction(event: PointerEvent<SVGSVGElement>) {
+  const { left, top, width, height } =
+    event.currentTarget.getBoundingClientRect();
+  const dx = (event.clientX - left) / width - 0.5;
+  const dy = (event.clientY - top) / height - 0.5;
+  // The dial starts at twelve o'clock and increases clockwise.
+  const angle = Math.atan2(dy, dx) + Math.PI / 2;
+  return (angle < 0 ? angle + fullTurn : angle) / fullTurn;
+}
+
 export default function CircularSlider({
   min,
   max,
   value,
   onChange,
 }: CircularSliderProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const updateFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+    const fraction = clockwiseFraction(event);
+    onChange(Math.round(min + fraction * (max - min)));
+  };
 
-  const radius = 120;
-  const strokeWidth = 10;
-  const center = { x: radius + strokeWidth, y: radius + strokeWidth };
-  const size = (radius + strokeWidth) * 2;
-
-  const calculateAngle = (x: number, y: number): number => {
-    const dx = x - center.x;
-    const dy = y - center.y;
-    let angle = Math.atan2(dy, dx) + Math.PI / 2;
-    if (angle < 0) {
-      angle += 2 * Math.PI;
+  const handleKeyDown = (event: KeyboardEvent<SVGSVGElement>) => {
+    const step = event.shiftKey ? 10 : 1;
+    let nextValue: number;
+    switch (event.key) {
+      case "ArrowUp":
+      case "ArrowRight":
+        nextValue = Math.min(max, value + step);
+        break;
+      case "ArrowDown":
+      case "ArrowLeft":
+        nextValue = Math.max(min, value - step);
+        break;
+      case "Home":
+        nextValue = min;
+        break;
+      case "End":
+        nextValue = max;
+        break;
+      default:
+        return;
     }
-    return angle;
+    event.preventDefault();
+    if (nextValue !== value) onChange(nextValue);
   };
 
-  const handleInteraction = (clientX: number, clientY: number) => {
-    if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = ((clientX - rect.left) * size) / rect.width;
-    const y = ((clientY - rect.top) * size) / rect.height;
-
-    const angle = calculateAngle(x, y);
-    const ratio = angle / (2 * Math.PI);
-    const newValue = Math.round(min + ratio * (max - min));
-    onChange(Math.min(max, Math.max(min, newValue)));
-  };
-
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setIsDragging(true);
-    handleInteraction(e.clientX, e.clientY);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!isDragging) return;
-    handleInteraction(e.clientX, e.clientY);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (e.currentTarget.hasPointerCapture(e.pointerId))
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    setIsDragging(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<SVGSVGElement>) => {
-    const step = e.shiftKey ? 10 : 1;
-    let nextValue = value;
-    if (e.key === "ArrowRight" || e.key === "ArrowUp") nextValue = value + step;
-    if (e.key === "ArrowLeft" || e.key === "ArrowDown")
-      nextValue = value - step;
-    if (e.key === "Home") nextValue = min;
-    if (e.key === "End") nextValue = max;
-    if (nextValue !== value) {
-      e.preventDefault();
-      onChange(Math.min(max, Math.max(min, nextValue)));
-    }
-  };
-
-  const ratio = (value - min) / (max - min);
-  const angle = ratio * 2 * Math.PI;
-  const thumbX = center.x + radius * Math.sin(angle);
-  const thumbY = center.y - radius * Math.cos(angle);
-
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - ratio * circumference;
+  const fraction = (value - min) / (max - min);
+  const angle = fraction * fullTurn;
+  const thumbX = center + radius * Math.sin(angle);
+  const thumbY = center - radius * Math.cos(angle);
+  const strokeDashoffset = circumference * (1 - fraction);
 
   return (
     <div className={styles.container}>
       <svg
-        ref={svgRef}
         viewBox={`0 0 ${size} ${size}`}
         width={size}
         height={size}
@@ -98,15 +81,24 @@ export default function CircularSlider({
         aria-valuemax={max}
         aria-valuenow={value}
         onKeyDown={handleKeyDown}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerDown={(event) => {
+          if (!event.isPrimary) return;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          updateFromPointer(event);
+        }}
+        onPointerMove={(event) => {
+          if (
+            event.isPrimary &&
+            event.currentTarget.hasPointerCapture(event.pointerId)
+          ) {
+            updateFromPointer(event);
+          }
+        }}
       >
         {/* Background Track */}
         <circle
-          cx={center.x}
-          cy={center.y}
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
           stroke="var(--glass-bg-hover)"
@@ -115,8 +107,8 @@ export default function CircularSlider({
 
         {/* Progress Arc */}
         <circle
-          cx={center.x}
-          cy={center.y}
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
           stroke="var(--primary)"
