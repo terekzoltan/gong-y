@@ -118,12 +118,11 @@
 }
 .cueMarker {
   position: absolute;
-  left: calc(11px + (100% - 22px) / 3);
+  transform: translateX(-50%);
   width: 2px;
   height: 10px;
   background: rgba(255, 255, 255, 0.5);
   pointer-events: none;
-  z-index: -0;
 }
 .caption {
   font-size: 0.75rem;

@@ -1,15 +1,19 @@
 import { useTimer } from "react-timer-hook";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWakeLock } from "./useWakeLock";
-import { getDueCues } from "../lib/timerCues.mjs";
+import { getDueCues, midGongFractions } from "../lib/timerCues.mjs";
 import { addMindfulMinutes } from "../lib/mindfulMinutes";
 
 type Phase = "warmup" | "running" | "paused" | "finished";
+export type MidGong = keyof typeof midGongFractions;
+
 export function useGongTimer({
   initialDurationMinutes,
+  midGong = "oneThird",
   playGong,
 }: {
   initialDurationMinutes: number;
+  midGong?: MidGong;
   playGong: () => void;
 }) {
   const initialDurationSeconds = initialDurationMinutes * 60;
@@ -60,12 +64,13 @@ export function useGongTimer({
       initialDurationSeconds,
       totalSeconds,
       playedRef.current,
+      midGong,
     );
     if (!due.length) return;
     due.forEach((cue) => playedRef.current.add(cue.id));
     // Coalesce cues when seeking skips both thresholds; never overlap sounds.
     playGong();
-  }, [phase, totalSeconds, initialDurationSeconds, playGong]);
+  }, [phase, totalSeconds, initialDurationSeconds, midGong, playGong]);
   const pause = () => {
     if (phase !== "running") return;
     pauseClock();
