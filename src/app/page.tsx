@@ -5,9 +5,11 @@ import DurationPicker from "@/components/DurationPicker";
 import ActiveTimer from "@/components/ActiveTimer";
 import styles from "./page.module.css";
 import { useGongAudio } from "@/hooks/useGongAudio";
+import type { MidGong } from "@/hooks/useGongTimer";
 
 export default function Home() {
   const [activeMinutes, setActiveMinutes] = useState<number | null>(null);
+  const [midGong, setMidGong] = useState<MidGong>("oneThird");
   const { prepareAudio, playGong, stopAudio, audioBlocked } = useGongAudio();
 
   const handleStart = (minutes: number) => {
@@ -25,12 +27,17 @@ export default function Home() {
       {activeMinutes ? (
         <ActiveTimer
           minutes={activeMinutes}
+          midGong={midGong}
           onCancel={handleCancel}
           playGong={playGong}
           audioBlocked={audioBlocked}
         />
       ) : (
-        <DurationPicker onStart={handleStart} />
+        <DurationPicker
+          midGong={midGong}
+          onMidGongChange={setMidGong}
+          onStart={handleStart}
+        />
       )}
     </main>
   );

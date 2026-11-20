@@ -22,7 +22,8 @@ npm run build
 
 - Choose 1-90 minutes, or start a 10/30/60-minute preset.
 - A five-second preparation countdown precedes the session.
-- Gongs sound at session start, one third of the configured duration elapsed, and with ten seconds remaining. For a 30-minute session, the intermediate gong sounds after 10 minutes.
+- A gong sounds at session start and again with ten seconds remaining.
+- Before starting a custom duration or a preset, choose when the intermediate gong should sound. For a 30-minute session, one third (the default), halfway, and two thirds ring after 10, 15, and 20 minutes respectively. Choose None to skip the intermediate gong.
 - Each scheduled cue is consumed once per session. Delayed ticks and forward seeks still trigger due cues. Seeking backwards does not re-arm them. While paused, cues wait until Resume. If a seek skips both cues at once, they share one sound.
 - Seeking to the end completes the session. A finished session cannot resume; return to the picker for a new session.
 - Completed sessions credit the configured duration to Mindful minutes, including sessions shortened using the slider. Stopped sessions do not add minutes. This preserves the existing statistics convention.

@@ -1,15 +1,26 @@
-import { useGongTimer } from "@/hooks/useGongTimer";
+import { type MidGong, useGongTimer } from "@/hooks/useGongTimer";
 import { useInactivity } from "@/hooks/useInactivity";
+import { midGongFractions } from "@/lib/timerCues.mjs";
 import styles from "./ActiveTimer.module.css";
 
 interface ActiveTimerProps {
   minutes: number;
+  midGong: MidGong;
   onCancel: () => void;
   playGong: () => void;
   audioBlocked: boolean;
 }
+
+const midGongCaption: Record<MidGong, string> = {
+  none: "",
+  oneThird: "Gong at one third",
+  half: "Gong halfway through",
+  twoThirds: "Gong at two thirds",
+};
+
 export default function ActiveTimer({
   minutes,
+  midGong,
   onCancel,
   playGong,
   audioBlocked,
@@ -23,9 +34,10 @@ export default function ActiveTimer({
     setTimeSeconds,
     totalSeconds,
     initialDurationSeconds,
-  } = useGongTimer({ initialDurationMinutes: minutes, playGong });
+  } = useGongTimer({ initialDurationMinutes: minutes, midGong, playGong });
   const { hidden, wake } = useInactivity(phase === "running" && !audioBlocked);
   const elapsedSeconds = initialDurationSeconds - totalSeconds;
+  const midGongFraction = midGongFractions[midGong];
   const progress = Math.min(
     1,
     Math.max(0, elapsedSeconds / initialDurationSeconds),
@@ -84,10 +96,19 @@ export default function ActiveTimer({
                   wake();
                 }}
               />
-              <span className={styles.cueMarker} aria-hidden="true" />
+              {midGongFraction !== null && (
+                <span
+                  className={styles.cueMarker}
+                  style={{
+                    left: `calc(11px + (100% - 22px) * ${midGongFraction})`,
+                  }}
+                  aria-hidden="true"
+                />
+              )}
             </div>
             <p className={styles.caption}>
-              Gong at one third · gentle reminder with 10s left
+              {midGongFraction !== null && `${midGongCaption[midGong]} · `}
+              Reminder with 10s left
             </p>
           </>
         )}

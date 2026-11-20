@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from "react";
 import TimerCard from "./TimerCard";
 import CircularSlider from "./CircularSlider";
+import type { MidGong } from "@/hooks/useGongTimer";
 import {
   readMindfulMinutes,
   subscribeMindfulMinutes,
@@ -8,10 +9,23 @@ import {
 import styles from "./DurationPicker.module.css";
 
 interface DurationPickerProps {
+  midGong: MidGong;
+  onMidGongChange: (value: MidGong) => void;
   onStart: (minutes: number) => void;
 }
 
-export default function DurationPicker({ onStart }: DurationPickerProps) {
+const midGongOptions = [
+  { value: "none", label: "None" },
+  { value: "oneThird", label: "One third" },
+  { value: "half", label: "Halfway" },
+  { value: "twoThirds", label: "Two thirds" },
+] as const;
+
+export default function DurationPicker({
+  midGong,
+  onMidGongChange,
+  onStart,
+}: DurationPickerProps) {
   const [selectedMinutes, setSelectedMinutes] = useState<number>(10);
   const totalMinutes = useSyncExternalStore(
     subscribeMindfulMinutes,
@@ -31,6 +45,24 @@ export default function DurationPicker({ onStart }: DurationPickerProps) {
         onChange={setSelectedMinutes}
       />
 
+      <fieldset className={styles.gongChoice}>
+        <legend>Mid-session gong</legend>
+        <div className={styles.gongOptions}>
+          {midGongOptions.map(({ value, label }) => (
+            <label key={value}>
+              <input
+                type="radio"
+                name="mid-gong"
+                value={value}
+                checked={value === midGong}
+                onChange={() => onMidGongChange(value)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <button
         className={styles.startButton}
         onClick={() => onStart(selectedMinutes)}
@@ -38,8 +70,8 @@ export default function DurationPicker({ onStart }: DurationPickerProps) {
         Start timer
       </button>
 
-      <p className={styles.hint} aria-label="Timer controls">
-        Gongs at the start, one third, and 10 seconds before the end.
+      <p className={styles.hint}>
+        Every session includes a starting gong and a reminder with 10 seconds left.
       </p>
 
       <div className={styles.grid}>
